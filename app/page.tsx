@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 const REASON: Record<string, string> = { minor: "Suspeita de menor de idade", non_consensual_content: "Conteúdo sem consentimento", harassment: "Assédio", spam: "Spam", impersonation: "Falsa identidade", other: "Outro" };
 const STATUS: Record<string, string> = { open: "Aberta", reviewing: "Em análise", actioned: "Ação aplicada", dismissed: "Dispensada" };
