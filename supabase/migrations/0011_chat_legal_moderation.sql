@@ -323,8 +323,8 @@ begin
   if char_length(trim(coalesce(p_justification, ''))) < 10 then raise exception 'justification_required'; end if;
   select m.* into mt from public.conversations c join public.matches m on m.id = c.match_id where c.id = p_conv;
   if not found then raise exception 'conversation_not_found'; end if;
-  if exists (select 1 from public.profile_members pm where pm.user_id = uid and pm.profile_id in (mt.profile_a, mt.profile_b)) then
-    raise exception 'cannot_review_own_conversation';
+  if exists (select 1 from public.conversation_participants cp where cp.conversation_id = p_conv and cp.user_id = uid) then
+    raise exception 'cannot_review_own_conversation';   -- só quem é participante de verdade (ex-membros de casal não contam)
   end if;
   if (select count(*) from public.admin_conversation_access a where a.admin_user_id = uid and a.opened_at > now() - interval '1 hour') >= 30 then
     raise exception 'rate_limit_exceeded';
