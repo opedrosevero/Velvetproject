@@ -15,3 +15,6 @@ Dados sobre vida sexual e preferências íntimas podem ser **dados pessoais sens
 
 Localização exata nunca é coletada (só cidade/UF informadas). Direitos já implementados: acesso/portabilidade (Meu perfil › Baixar meus dados) e eliminação (Excluir minha conta). A exportação não inclui o texto de mensagens escritas por terceiros.
 Pendentes: correção de dados fora do perfil, revogação granular de consentimentos, registro de operações de tratamento, plano de resposta a incidentes e canal do encarregado.
+
+## Acesso de moderação às conversas
+Administradores podem acessar conversas e anexos para moderação e segurança, inclusive sem denúncia, com justificativa, duração limitada e registro imutável. Isso está descrito no documento único de Termos e Privacidade (resumo em "Pontos importantes" e seção 5) e exigido por aceite versionado. A base legal e a proporcionalidade desse acesso (LGPD: finalidade, necessidade, adequação) **precisam de parecer jurídico antes do lançamento**; considere restringir o acesso sem denúncia.

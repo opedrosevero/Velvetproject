@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { AdminConversations } from "../../components/AdminConversations";
 
-const REASON: Record<string, string> = { minor: "Suspeita de menor de idade", non_consensual_content: "Conteúdo sem consentimento", harassment: "Assédio", spam: "Spam", impersonation: "Falsa identidade", other: "Outro" };
+const REASON: Record<string, string> = { minor: "Suspeita de menor de idade", non_consensual_content: "Conteúdo sem consentimento", harassment: "Assédio", spam: "Spam", impersonation: "Falsa identidade", threat: "Ameaça", coercion: "Coerção ou chantagem", scam: "Golpe", other: "Outro" };
 const STATUS: Record<string, string> = { open: "Aberta", reviewing: "Em análise", actioned: "Ação aplicada", dismissed: "Dispensada" };
 const DECISIONS: [string, string][] = [["dismiss", "Dispensar denúncia (sem ação)"], ["remove_post", "Remover a publicação"], ["hide_profile", "Ocultar o perfil"], ["suspend_account", "Suspender a conta (só administrador)"]];
 const ERR: Record<string, string> = {
@@ -161,7 +162,7 @@ function EventsAdmin({ items, refresh }: { items: any[]; refresh: () => void }) 
 export default function Admin() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
-  const [tab, setTab] = useState<"reports" | "suspended" | "audit" | "events" | "privacy">("reports");
+  const [tab, setTab] = useState<"reports" | "suspended" | "audit" | "events" | "privacy" | "conversas">("reports");
   const [filter, setFilter] = useState("open");
   const [items, setItems] = useState<any[]>([]);
   const [err, setErr] = useState("");
@@ -171,6 +172,7 @@ export default function Admin() {
     let res: any;
     if (t === "reports") res = await supabase.rpc("staff_reports", { p_status: f || null });
     else if (t === "suspended") res = await supabase.rpc("staff_suspended_accounts");
+    else if (t === "conversas") res = { data: [], error: null };
     else if (t === "privacy") res = await supabase.rpc("staff_privacy_requests");
     else if (t === "events") res = await supabase.from("events").select("id,title,starts_at,city,region_uf,status").order("starts_at", { ascending: false }).limit(50);
     else res = await supabase.from("audit_log").select("id,actor_user_id,action,target_type,target_id,metadata,created_at").order("created_at", { ascending: false }).limit(50);
@@ -193,7 +195,7 @@ export default function Admin() {
 
   const isAdmin = role === "admin";
   const canAct = role === "admin" || role === "moderator";
-  const go = (t: "reports" | "suspended" | "audit" | "events" | "privacy") => { setTab(t); setItems([]); load(t); };
+  const go = (t: "reports" | "suspended" | "audit" | "events" | "privacy" | "conversas") => { setTab(t); setItems([]); load(t); };
 
   return (
     <main className="wrap" style={{ maxWidth: 720 }}>
@@ -206,6 +208,7 @@ export default function Admin() {
         {isAdmin && <button className={tab === "suspended" ? "btn primary" : "btn"} onClick={() => go("suspended")}>Contas suspensas</button>}
         {isAdmin && <button className={tab === "audit" ? "btn primary" : "btn"} onClick={() => go("audit")}>Auditoria</button>}
         {isAdmin && <button className={tab === "events" ? "btn primary" : "btn"} onClick={() => go("events")}>Eventos</button>}
+        {isAdmin && <button className={tab === "conversas" ? "btn primary" : "btn"} onClick={() => go("conversas")}>Conversas</button>}
         {isAdmin && <button className={tab === "privacy" ? "btn primary" : "btn"} onClick={() => go("privacy")}>LGPD</button>}
         <Link className="btn" href="/clube">Sair do painel</Link>
       </div>
@@ -219,16 +222,17 @@ export default function Admin() {
         </>
       )}
       {err && <p className="err" role="alert">{err}</p>}
-      {items.length === 0 && !err && <p className="muted" style={{ marginTop: 16 }}>Nada por aqui.</p>}
+      {items.length === 0 && !err && tab !== "conversas" && tab !== "events" && <p className="muted" style={{ marginTop: 16 }}>Nada por aqui.</p>}
       {tab === "reports" && items.map((r) => <ReportCard key={r.id} r={r} canAct={canAct} refresh={() => load()} />)}
       {tab === "suspended" && items.map((a) => <SuspendedRow key={a.user_id} a={a} refresh={() => load()} />)}
+      {tab === "conversas" && <AdminConversations />}
       {tab === "privacy" && <PrivacyAdmin items={items} refresh={() => load()} />}
       {tab === "events" && <EventsAdmin items={items} refresh={() => load()} />}
       {tab === "audit" && items.map((a) => (
         <div className="card" key={a.id} style={{ marginTop: 8, padding: 12 }}>
           <strong>{a.action}</strong> <span className="muted">· {when(a.created_at)} · por {String(a.actor_user_id).slice(0, 8)}</span>
           {a.metadata?.decision && <p style={{ margin: "4px 0" }}>Decisão: {a.metadata.decision}</p>}
-          {a.metadata?.note && <p className="muted" style={{ margin: 0 }}>Justificativa: {a.metadata.note}</p>}
+          {(a.metadata?.note || a.metadata?.justification) && <p className="muted" style={{ margin: 0 }}>Justificativa: {a.metadata.note ?? a.metadata.justification}</p>}
         </div>
       ))}
     </main>

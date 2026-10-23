@@ -123,3 +123,39 @@ button.avatar { cursor: pointer; }
 .skip:focus { left: 8px; }
 .badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--color-burgundy); color: var(--color-ivory); font-size: .7rem; font-style: normal; }
 @media (prefers-reduced-motion: reduce) { .page-in { animation: none; } * { scroll-behavior: auto !important; } }
+
+/* ── Chat premium ── */
+:root { --nav-h: 58px; }
+.msgs-shell { display: grid; grid-template-columns: 340px 1fr; height: calc(100dvh - var(--nav-h)); }
+.msgs-list { border-right: 1px solid var(--color-border); overflow-y: auto; background: #110d0e; display: flex; flex-direction: column; }
+.msgs-main { min-width: 0; display: flex; flex-direction: column; height: 100%; position: relative; }
+@media (max-width: 640px) {
+  :root { --nav-h: 112px; }
+  .msgs-shell { grid-template-columns: 1fr; }
+  .msgs-shell[data-chat="1"] .msgs-list, .msgs-shell[data-chat="0"] .msgs-main { display: none; }
+}
+@media (min-width: 641px) { .back { display: none; } }
+.back { color: var(--color-ivory); text-decoration: none; font-size: 1.4rem; padding: 4px 8px; }
+.conv-item { display: flex; gap: 12px; align-items: center; padding: 10px 12px; margin: 2px 0; border-radius: 12px; color: var(--color-ivory); text-decoration: none; border: 1px solid transparent; transition: background var(--motion-fast); }
+.conv-item:hover { background: #181313; }
+.conv-item[aria-current="page"] { background: #1f1717; border-color: var(--color-border); }
+.chat-head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: #110d0e; }
+.chat-banner { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 16px; background: #1f1717; border-bottom: 1px solid var(--color-border); font-size: .9rem; }
+.chat-history { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; overscroll-behavior: contain; }
+.bubble { max-width: min(78%, 520px); padding: 8px 12px; border-radius: 16px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; animation: pop .18s ease-out; }
+.bubble.me { background: var(--color-burgundy); border-bottom-right-radius: 4px; }
+.bubble.them { background: #1f1818; border: 1px solid var(--color-border); border-bottom-left-radius: 4px; }
+.bubble .t { display: block; font-size: .68rem; color: rgba(240,232,218,.6); text-align: right; margin-top: 2px; }
+.sep { align-self: center; font-size: .72rem; color: var(--color-muted); margin: 14px 0 6px; padding: 2px 12px; border: 1px solid var(--color-border); border-radius: 999px; }
+.mimg { padding: 0; border: 0; background: none; cursor: zoom-in; display: block; }
+.mimg img { max-width: 100%; max-height: 320px; border-radius: 10px; display: block; }
+.mimg-ph { width: 220px; height: 160px; max-width: 100%; border-radius: 10px; border: 1px solid var(--color-border); }
+.msg-report { background: none; border: 0; color: var(--color-muted); opacity: .35; cursor: pointer; font-size: .8rem; padding: 0 6px; }
+.msg-report:hover, .msg-report:focus-visible { opacity: 1; }
+.composer { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--color-border); background: #110d0e; }
+.composer textarea { resize: none; min-height: 42px; max-height: 140px; border-radius: 20px; padding: 10px 14px; }
+.newpill { position: absolute; left: 50%; transform: translateX(-50%); bottom: 84px; z-index: 5; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--color-gold); background: var(--color-bg); color: var(--color-ivory); cursor: pointer; font: inherit; font-size: .8rem; }
+@keyframes pop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
+.legal-note { padding: 10px 14px; border-left: 2px solid var(--color-gold); background: #181313; border-radius: 6px; font-size: .9rem; line-height: 1.5; }
+.chip[aria-current="page"] { border-color: var(--color-gold); color: var(--color-ivory); }

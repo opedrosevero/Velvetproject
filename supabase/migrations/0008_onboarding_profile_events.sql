@@ -356,7 +356,7 @@ declare uid uuid := (select auth.uid()); eid uuid;
 begin
   if not public.has_role(array['admin']::public.admin_role[]) then raise exception 'admin_only'; end if;
   insert into public.events (title, details, starts_at, city, region_uf, created_by)
-  values (p_title, p_details, p_starts, p_city, nullif(upper(p_uf), '')) returning id into eid;
+  values (p_title, p_details, p_starts, p_city, nullif(upper(p_uf), ''), uid) returning id into eid;
   insert into public.audit_log (actor_user_id, action, target_type, target_id, metadata)
   values (uid, 'event_created', 'event', eid::text, jsonb_build_object('title', p_title));
   return eid;

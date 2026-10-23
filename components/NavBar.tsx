@@ -14,7 +14,7 @@ const TABS = [
   { href: "/eventos", label: "Eventos", m: false },
   { href: "/perfil", label: "Meu perfil", m: true },
 ];
-const HIDE = ["/", "/entrar", "/convite", "/onboarding", "/redefinir-senha"];
+const HIDE = ["/", "/entrar", "/convite", "/onboarding", "/redefinir-senha", "/aceite"];
 
 export function NavBar() {
   const path = usePathname();
@@ -40,6 +40,14 @@ export function NavBar() {
     tick();
     const t = setInterval(tick, 40000);
     return () => clearInterval(t);
+  }, [email, path]);
+  useEffect(() => {   // exige o aceite da versão vigente dos documentos legais
+    if (!email || ["/aceite", "/termos", "/privacidade", "/diretrizes"].includes(path)) return;
+    (async () => {
+      await supabase.rpc("ensure_account");
+      const { data } = await supabase.rpc("legal_status");
+      if (data?.pending?.length) router.replace("/aceite");
+    })();
   }, [email, path]);
 
   if (HIDE.includes(path) || !email) return null;

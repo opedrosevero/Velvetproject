@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
-const TERMS = "rascunho-0"; // textos reais serão revisados por advogado antes do lançamento
 const MAP: [string, string][] = [
   ["Invalid login credentials", "E-mail ou senha incorretos."],
   ["Email not confirmed", "Confirme seu e-mail antes de entrar: procure o link na sua caixa de entrada."],
@@ -19,35 +19,39 @@ export default function Entrar() {
   const [mode, setMode] = useState<Mode>("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adult, setAdult] = useState(false);
+  const [chk, setChk] = useState({ adult: false, docs: false });   // nunca marcadas por padrão
+  const [ver, setVer] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("excluida")) setNote("Sua conta foi excluída e seus dados foram removidos do aplicativo.");
+    supabase.from("legal_documents").select("version").eq("kind", "legal").eq("is_current", true).maybeSingle()
+      .then(({ data }) => setVer(data?.version ?? null));
   }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setMsg(""); setBusy(true);
     try {
       if (mode === "signup") {
-        if (!adult) throw new Error("Confirme que você tem 18 anos ou mais e aceita os termos.");
+        if (!chk.adult || !chk.docs) throw new Error("Marque as duas confirmações para criar a conta.");
+        if (!ver) throw new Error("Não foi possível carregar o documento. Tente novamente.");
         if (password.length < 8) throw new Error("A senha precisa ter ao menos 8 caracteres.");
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { adult_declared: true, terms_version: TERMS }, emailRedirectTo: `${window.location.origin}/onboarding` },
+          options: { data: { adult_declared: true, legal_version: ver }, emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
         if (data.session) { await supabase.rpc("ensure_account"); router.push("/onboarding"); }
-        else setMode("sent");                      // confirmação de e-mail ligada: falta clicar no link
+        else setMode("sent");
       } else if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         router.push("/clube");
       } else if (mode === "forgot") {
         await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/redefinir-senha` });
-        setMode("forgot-sent");                    // resposta igual exista ou não o e-mail
+        setMode("forgot-sent");
       }
     } catch (err: any) { setMsg(friendly(err?.message)); } finally { setBusy(false); }
   }
@@ -89,14 +93,15 @@ export default function Entrar() {
             </>
           )}
           {mode === "signup" && (
-            <div className="check">
-              <input id="adult" type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
-              <label htmlFor="adult" style={{ margin: 0 }}>Declaro ter 18 anos ou mais e aceito os termos de uso e a política de privacidade (rascunhos).</label>
-            </div>
+            <>
+              <div className="check" style={{ marginTop: 16 }}><input id="adult" type="checkbox" checked={chk.adult} onChange={(e) => setChk({ ...chk, adult: e.target.checked })} /><label htmlFor="adult" style={{ margin: 0 }}>Tenho 18 anos ou mais.</label></div>
+              <div className="check"><input id="docs" type="checkbox" checked={chk.docs} onChange={(e) => setChk({ ...chk, docs: e.target.checked })} /><label htmlFor="docs" style={{ margin: 0 }}>Li e aceito os <Link href="/termos" target="_blank">Termos de Uso e a Política de Privacidade</Link>, inclusive o acesso de moderação às conversas.</label></div>
+              <p className="muted" style={{ fontSize: ".75rem" }}>Documento provisório, pendente de revisão jurídica.</p>
+            </>
           )}
           {msg && <p className="err" role="alert">{msg}</p>}
           <div className="row" style={{ flexWrap: "wrap" }}>
-            <button className="btn primary" disabled={busy} type="submit">{busy ? "Aguarde…" : mode === "signup" ? "Criar conta" : mode === "login" ? "Entrar" : "Enviar link"}</button>
+            <button className="btn primary" disabled={busy || (mode === "signup" && !ver)} type="submit">{busy ? "Aguarde…" : mode === "signup" ? "Criar conta" : mode === "login" ? "Entrar" : "Enviar link"}</button>
             <button className="btn" type="button" onClick={() => go(mode === "signup" ? "login" : "signup")}>{mode === "signup" ? "Já tenho conta" : "Criar conta"}</button>
           </div>
           {mode === "login" && <p style={{ marginBottom: 0 }}><a href="#" onClick={(e) => { e.preventDefault(); go("forgot"); }}>Esqueci minha senha</a></p>}

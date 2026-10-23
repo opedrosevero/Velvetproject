@@ -2,7 +2,7 @@
 
 ## Testes de segurança do banco (SQL)
 Cada arquivo em `supabase/tests/` cria pessoas fictícias, simula abusos e **desfaz tudo** no final. Rode no SQL Editor do Supabase e confira a última linha ("RESUMO: X de Y testes passaram"). Rode todos depois de aplicar uma migration nova:
-`security_tests.sql`, `_feed`, `_admin`, `_media`, `_discovery`, `_phase34`, `_phase5`, `_phase67`.
+`security_tests.sql`, `_feed`, `_admin`, `_media`, `_discovery`, `_phase34`, `_phase5`, `_phase67`, `_chat` (chat, fotos nas mensagens, aceite legal e acesso administrativo).
 Os testes antigos desligam a regra estrita de cadastro apenas dentro da transação de teste (`app_settings.strict_onboarding`); os de `phase34` rodam com a regra ligada, como em produção.
 
 ## Verificação do código
