@@ -11,7 +11,7 @@ export const metadata = { title: "VELVET", description: "Clube privado para adul
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable}`}>
-      <body><NavBar />{children}</body>
+      <body><a className="skip" href="#conteudo">Pular para o conteúdo</a><NavBar />{children}</body>
     </html>
   );
 }

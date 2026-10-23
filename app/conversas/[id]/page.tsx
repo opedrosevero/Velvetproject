@@ -52,7 +52,7 @@ export default function Conversa() {
     return () => clearInterval(t);
   }, [id, refresh, router]);
 
-  useEffect(() => { bottom.current?.scrollIntoView(); }, [msgs.length]);
+  useEffect(() => { bottom.current?.scrollIntoView(); if (msgs.length) supabase.rpc("mark_conversation_read", { p_conv: id }); }, [msgs.length]);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();

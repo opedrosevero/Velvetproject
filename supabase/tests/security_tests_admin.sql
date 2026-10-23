@@ -17,6 +17,7 @@ begin
       (uc, 'sup@teste.local', 'authenticated', 'authenticated'), (ud, 'd@teste.local', 'authenticated', 'authenticated'),
       (ue, 'e@teste.local', 'authenticated', 'authenticated');
     insert into public.accounts (id, adult_declared_at, terms_version) select id, now(), 'teste' from auth.users where id in (ua, ub, uc, ud, ue);
+    update public.app_settings set value = 'false' where key = 'strict_onboarding';  -- testes antigos não usam foto/data de nascimento
     insert into public.admin_roles (user_id, role) values (ua, 'admin'), (ub, 'moderator'), (uc, 'support');
 
     reset role; perform set_config('request.jwt.claims', json_build_object('sub', ud)::text, true); set local role authenticated;

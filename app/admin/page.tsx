@@ -95,10 +95,73 @@ function SuspendedRow({ a, refresh }: { a: any; refresh: () => void }) {
   );
 }
 
+function PrivacyAdmin({ items, refresh }: { items: any[]; refresh: () => void }) {
+  const [msg, setMsg] = useState("");
+  async function done(id: string) {
+    const note = prompt("Confirme que o login já foi removido em Supabase › Authentication › Users e escreva uma observação:");
+    if (!note) return;
+    const { error } = await supabase.rpc("staff_complete_privacy_request", { p_id: id, p_note: note });
+    if (error) return setMsg(msgOf(error.message));
+    refresh();
+  }
+  return (
+    <div>
+      <p className="muted" style={{ marginTop: 12 }}>Pedidos de exclusão de conta. Os dados já foram apagados do aplicativo; falta remover o login em Supabase › Authentication › Users e marcar como concluído.</p>
+      {msg && <p className="err" role="alert">{msg}</p>}
+      {items.map((r) => (
+        <div className="card" key={r.id} style={{ marginTop: 10, padding: 14 }}>
+          <strong>{r.email ?? String(r.user_id).slice(0, 8)}</strong> <span className="muted">· {when(r.created_at)} · {r.status === "pending" ? "pendente" : "concluído"}</span>
+          {r.status === "pending" && <div className="row"><button className="btn" onClick={() => done(r.id)}>Marcar como concluído</button></div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EventsAdmin({ items, refresh }: { items: any[]; refresh: () => void }) {
+  const [f, setF] = useState({ title: "", details: "", starts: "", city: "", uf: "SP" });
+  const [msg, setMsg] = useState("");
+  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  async function create(e: React.FormEvent) {
+    e.preventDefault(); setMsg("");
+    const { error } = await supabase.rpc("staff_create_event", { p_title: f.title, p_details: f.details, p_starts: new Date(f.starts).toISOString(), p_city: f.city, p_uf: f.uf });
+    if (error) return setMsg(msgOf(error.message));
+    setF({ ...f, title: "", details: "" }); refresh();
+  }
+  async function cancel(id: string) {
+    const note = prompt("Justificativa para cancelar o evento:");
+    if (!note) return;
+    const { error } = await supabase.rpc("staff_cancel_event", { p_event: id, p_note: note });
+    if (error) return setMsg(msgOf(error.message));
+    refresh();
+  }
+  return (
+    <div>
+      <form className="card" onSubmit={create} style={{ marginTop: 12 }}>
+        <h3 style={{ marginTop: 0 }}>Novo evento</h3>
+        <p className="muted" style={{ fontSize: ".8rem" }}>Todos os membros leem o texto do evento. Não publique endereço exato ou dados pessoais.</p>
+        <label htmlFor="et">Título</label><input id="et" required minLength={3} maxLength={120} value={f.title} onChange={set("title")} />
+        <label htmlFor="ed">Detalhes</label><textarea id="ed" rows={3} maxLength={2000} value={f.details} onChange={set("details")} />
+        <label htmlFor="es">Data e hora</label><input id="es" type="datetime-local" required value={f.starts} onChange={set("starts")} />
+        <label htmlFor="ec">Cidade</label><input id="ec" maxLength={80} value={f.city} onChange={set("city")} />
+        <label htmlFor="eu">UF</label><input id="eu" maxLength={2} value={f.uf} onChange={set("uf")} />
+        <div className="row"><button className="btn primary" type="submit">Publicar evento</button></div>
+      </form>
+      {msg && <p className="err" role="alert">{msg}</p>}
+      {items.map((ev) => (
+        <div className="card" key={ev.id} style={{ marginTop: 12, padding: 14 }}>
+          <strong>{ev.title}</strong> <span className="muted">· {when(ev.starts_at)} · {ev.city ?? ""}{ev.region_uf ? `/${ev.region_uf}` : ""} · {ev.status === "cancelled" ? "cancelado" : "publicado"}</span>
+          {ev.status === "published" && <div className="row"><button className="btn" onClick={() => cancel(ev.id)}>Cancelar evento</button></div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Admin() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
-  const [tab, setTab] = useState<"reports" | "suspended" | "audit">("reports");
+  const [tab, setTab] = useState<"reports" | "suspended" | "audit" | "events" | "privacy">("reports");
   const [filter, setFilter] = useState("open");
   const [items, setItems] = useState<any[]>([]);
   const [err, setErr] = useState("");
@@ -108,6 +171,8 @@ export default function Admin() {
     let res: any;
     if (t === "reports") res = await supabase.rpc("staff_reports", { p_status: f || null });
     else if (t === "suspended") res = await supabase.rpc("staff_suspended_accounts");
+    else if (t === "privacy") res = await supabase.rpc("staff_privacy_requests");
+    else if (t === "events") res = await supabase.from("events").select("id,title,starts_at,city,region_uf,status").order("starts_at", { ascending: false }).limit(50);
     else res = await supabase.from("audit_log").select("id,actor_user_id,action,target_type,target_id,metadata,created_at").order("created_at", { ascending: false }).limit(50);
     if (res.error) return setErr(msgOf(res.error.message));
     setItems(res.data ?? []);
@@ -128,7 +193,7 @@ export default function Admin() {
 
   const isAdmin = role === "admin";
   const canAct = role === "admin" || role === "moderator";
-  const go = (t: "reports" | "suspended" | "audit") => { setTab(t); setItems([]); load(t); };
+  const go = (t: "reports" | "suspended" | "audit" | "events" | "privacy") => { setTab(t); setItems([]); load(t); };
 
   return (
     <main className="wrap" style={{ maxWidth: 720 }}>
@@ -140,6 +205,8 @@ export default function Admin() {
         <button className={tab === "reports" ? "btn primary" : "btn"} onClick={() => go("reports")}>Denúncias</button>
         {isAdmin && <button className={tab === "suspended" ? "btn primary" : "btn"} onClick={() => go("suspended")}>Contas suspensas</button>}
         {isAdmin && <button className={tab === "audit" ? "btn primary" : "btn"} onClick={() => go("audit")}>Auditoria</button>}
+        {isAdmin && <button className={tab === "events" ? "btn primary" : "btn"} onClick={() => go("events")}>Eventos</button>}
+        {isAdmin && <button className={tab === "privacy" ? "btn primary" : "btn"} onClick={() => go("privacy")}>LGPD</button>}
         <Link className="btn" href="/clube">Sair do painel</Link>
       </div>
       {tab === "reports" && (
@@ -155,6 +222,8 @@ export default function Admin() {
       {items.length === 0 && !err && <p className="muted" style={{ marginTop: 16 }}>Nada por aqui.</p>}
       {tab === "reports" && items.map((r) => <ReportCard key={r.id} r={r} canAct={canAct} refresh={() => load()} />)}
       {tab === "suspended" && items.map((a) => <SuspendedRow key={a.user_id} a={a} refresh={() => load()} />)}
+      {tab === "privacy" && <PrivacyAdmin items={items} refresh={() => load()} />}
+      {tab === "events" && <EventsAdmin items={items} refresh={() => load()} />}
       {tab === "audit" && items.map((a) => (
         <div className="card" key={a.id} style={{ marginTop: 8, padding: 12 }}>
           <strong>{a.action}</strong> <span className="muted">· {when(a.created_at)} · por {String(a.actor_user_id).slice(0, 8)}</span>

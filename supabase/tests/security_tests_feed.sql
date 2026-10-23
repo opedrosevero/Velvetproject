@@ -15,6 +15,7 @@ begin
       (ua, 'a@teste.local', 'authenticated', 'authenticated'), (ub, 'b@teste.local', 'authenticated', 'authenticated'),
       (uc, 'c@teste.local', 'authenticated', 'authenticated');
     insert into public.accounts (id, adult_declared_at, terms_version) select id, now(), 'teste' from auth.users where id in (ua, ub, uc);
+    update public.app_settings set value = 'false' where key = 'strict_onboarding';  -- testes antigos não usam foto/data de nascimento
 
     reset role; perform set_config('request.jwt.claims', json_build_object('sub', ua)::text, true); set local role authenticated;
     pa := public.create_profile('single_woman', 'Ana Teste', null, 'São Paulo', 'SP', '25-34');
