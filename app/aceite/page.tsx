@@ -39,7 +39,7 @@ export default function Aceite() {
         <p>Para continuar, leia e aceite a versão vigente.</p>
         <div className="check">
           <input id="c-legal" type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
-          <label htmlFor="c-legal" style={{ margin: 0 }}>Li e aceito os <Link href="/termos" target="_blank">Termos de Uso e a Política de Privacidade</Link>{version ? ` (versão ${version})` : ""}</label>
+          <label htmlFor="c-legal" style={{ margin: 0 }}>Li e aceito os <Link href="/termos" target="_blank">Termos de Uso e a Política de Privacidade</Link>{version ? ` (versão ${version})` : ""}, inclusive o acesso de moderação às conversas.</label>
         </div>
         {msg && <p className="err" role="alert">{msg}</p>}
         <div className="row"><button className="btn primary" disabled={!ok || !version || busy} onClick={accept}>{busy ? "Registrando…" : "Aceitar e continuar"}</button></div>
